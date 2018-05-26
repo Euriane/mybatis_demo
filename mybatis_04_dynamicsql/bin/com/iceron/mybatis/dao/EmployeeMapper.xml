@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+ "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+<!-- 
+	namespace:名称空间;指定为接口的全类名 ,使 dao接口和 sql映射文件动态绑定
+-->
+<mapper namespace="com.iceron.mybatis.dao.EmployeeMapper">
+
+
+	<!-- 
+		id：			唯一标识 = getEmpById，使 dao接口的方法和 sql映射文件的sql 语句一一绑定
+		resultType： 返回值类型 (查询的结果以什么类型封装 并返回)
+		#{id}：		从传递过来的参数中取出id值
+	 -->
+	 <!-- 
+	 	1. public Employee getEmpById(Integer id); 
+	 	2. select id, last_name as lastName, gender, email     ps:此处的lastName 和bean的字段相同，在没有设置mapUnderscoreToCamelCase之前
+	 	3. 因为在 mybatis-config.xml 文件中 设置了mapUnderscoreToCamelCase，所以无需再给字段起别名
+	 	4. 因为在 mybatis-config.xml 文件中 设置了typeAliases，所以resultType="com.iceron.mybatis.bean.Employee" 改为 resultType="emp"
+	 	5. 因为在 mybatis-config.xml 文件中 设置了批量起别名，所以resultType="employee"  (默认别名)
+	 	6. 测试@Alias ，resultType="emp2"
+	 	7. databaseId ： 标识该条sql 是在哪个数据库环境下使用  
+		 	MyBatis 可以根据不同的数据库厂商执行不同的语句，这种多厂商的支持是基于映射语句中的 databaseId 属性。 
+		 	MyBatis 会加载不带 databaseId 属性和 带有匹配当前数据库 databaseId 属性的所有语句。 
+		 	如果同时找到带有 databaseId 和不带 databaseId 的相同语句，则后者会被舍弃。
+	 -->
+	<select id="getEmpById" resultType="emp2">  
+		select id, last_name, gender, email
+		from tbl_employee 
+		where id = #{id}
+	</select>
+	
+	<select id="getEmpById" resultType="emp2" databaseId="mysql">  
+		select id, last_name, gender, email
+		from tbl_employee 
+		where id = #{id}
+	</select>
+	
+	<select id="getEmpById" resultType="emp2" databaseId="oracle">  
+		select emp_id id, last_name, gender, email
+		from employees
+		where emp_id = #{id}   <!-- oracle 查询时，不能直接引用别名去查询，所以使用 emp_id-->
+	</select>
+	
+	
+	<!-- ===================================================================== -->
+	<!-- public void addEmp(Employee employee); -->
+	<!-- 
+		parameterType 属性： 可以省略，如果要写，则指定全类名或别名
+		
+		获取自增主键的值：
+		useGeneratedKeys 属性： 使用自增主键获取主键值策略。默认值为false
+		keyProperty 属性：指定对应的主键属性，也就是mybatis 获取到主键值以后，将这个值封装给 javabean 的哪个属性。
+	 -->
+	 <insert id="addEmp" parameterType="emp2" databaseId="mysql"
+	 		 useGeneratedKeys="true" keyProperty="id"> 
+	 	insert into tbl_employee(last_name, gender, email) 
+	 	values (#{lastName}, #{gender}, #{email})
+	 </insert>
+	 
+	 
+	 <!-- 
+	 	Oracle 不支持自增；oracle使用序列来模拟自增
+	 	每次插入的数据的主键都是从序列中拿到的值；如何获取这个值
+	 	
+	 		selectKey 标签：	编写查询主键的sql语句
+	 		keyProperty 属性：指定对应的主键属性，也就是mybatis 获取到主键值以后，将这个值封装给 javabean 的哪个属性。
+	 		order 属性： 		BEFORE  当前sql 在插入sql 之前运行
+	 						AFTER   当前sql 在插入sql 之后运行
+	 		resultType 属性：	查出的数据的返回值类型
+	  -->
+	 <insert id="addEmp" databaseId="oracle"> 
+	 	<!-- order="BEFORE" -->
+	 	<selectKey keyProperty="id" order="BEFORE" resultType="Integer">
+	 		select EMPLOYEES_SEQ.nextval from dual
+	 	</selectKey>
+	 	
+	 	insert into employees(emp_id, last_name, gender, email) 
+	 	values (#{id},#{lastName}, #{gender}, #{email})
+	 	
+	 	<!-- 
+	 	order="AFTER" (ps: 该方式可能会存在一些问题)
+	 	<selectKey keyProperty="id" order="AFTER" resultType="Integer">
+	 		select EMPLOYEES_SEQ.currval from dual
+	 	</selectKey>
+	 	
+	 	insert into employees(emp_id, last_name, gender, email) 
+	 	values (EMPLOYEES_SEQ.nextval,#{lastName}, #{gender}, #{email})
+	 	-->
+	 </insert>
+	 
+	 
+	 <!-- ===================================================================== -->
+	 <!-- public void updateEmp(Employee employee); -->
+	 <update id="updateEmp">
+	 	update tbl_employee
+	 	set last_name=#{lastName}, gender=#{gender}, email=#{email}
+	 	where id=#{id}
+	 </update>
+	 
+	 
+	 <!-- ===================================================================== -->
+	 <!-- public void delEmpById(Integer id); -->
+	 <delete id="delEmpById">
+	 	delete from tbl_employee
+	 	where id=#{id}
+	 </delete>
+	
+	
+	<!-- ===================================================================== -->
+	<!-- //测试传递多个参数
+	public Employee getEmpByIdAndLastName(Integer id, String lastName); 
+	-->
+	<select id="getEmpByIdAndLastName" resultType="emp2">
+		select id, last_name, gender, email
+		from tbl_employee 
+		where id = #{id} and last_name = #{lastName} 
+	</select>
+	
+	
+	<!-- ===================================================================== -->
+	<!-- //测试传递pojo
+	public Employee getEmpByPOJO(Employee emp);
+	 -->
+	<select id="getEmpByPOJO" resultType="emp2">
+		select id, last_name, gender, email
+		from tbl_employee 
+		where id = #{id} and last_name = #{lastName}    <!-- 直接从pojo 中取出属性值 -->
+	</select> 
+	
+	
+	<!-- ===================================================================== -->
+	<!-- //测试传递map
+	public Employee getEmpByMap(Map<String, Object> map);
+	 -->
+	<select id="getEmpByMap" resultType="emp2">
+		select id, last_name, gender, email
+		from tbl_employee 
+		where id = #{id} and last_name = #{lastName}    <!-- 直接从map 中取出 key为 id和 lastName 对应的 value -->
+	</select>
+	
+	
+	 <!-- ===================================================================== -->
+	<!-- //测试返回List
+	public List<Employee> getEmpsByLastNameLike(String lastName);
+	 -->
+	 <!-- resultType :如果返回的是一个集合，则要写集合中元素的类型 -->
+	 <select id="getEmpsByLastNameLike" resultType="emp2">  
+	 	select id, last_name, gender, email
+		from tbl_employee 
+		where last_name like #{lastName}
+	 </select>
+	 
+	 
+	  <!-- ===================================================================== -->
+	 <!-- //测试返回Map(一条记录的map: key 就是列名， value就是对应的值)
+	public Map<String, Object> getEmpsByIdReturnMap(Integer id);
+	注意返回值类型  resultType
+	 -->
+	 <select id="getEmpsByIdReturnMap" resultType="map">
+	 	select id, last_name, gender, email
+		from tbl_employee 
+		where id = #{id}
+	 </select>
+	 
+	 
+	  <!-- ===================================================================== -->
+	 <!-- //测试返回Map(多条记录的map: Map<Integer（id）, Employee> : 键是这条记录的主键，值是记录) 
+	public Map<Integer, Employee> getEmpsByLastNameLikeReturnMap(Integer id);
+	注意返回值类型  resultType
+	 -->
+	 <select id="getEmpsByLastNameLikeReturnMap" resultType="emp2">
+	 	select id, last_name, gender, email
+		from tbl_employee 
+		where last_name like #{lastName}
+	 </select>
+	 
+	 
+	  <!-- ===================================================================== -->
+	 <!-- //测试resultMap
+	public Employee getEmpById2(Integer id);
+	 -->
+	 <!-- 
+	 	resultMap 标签 :	自定义结果集映射规则，resultType、resultMap只能二选一, 开启了驼峰命名法映射后 也不会影响自定义的规则
+	 	type 属性:	            自定义规则的Java类型
+	 	id 属性：		 	唯一id，方便引用
+	 		
+	 		column 属性：       数据库列字段，或列字段的别名
+	 		property 属性： javabean 属性
+	 -->
+	 <resultMap type="emp2" id="MyEmp">
+	 	<id column="id" property="id"/> 
+	 	<result column="last_name" property="lastName"/>
+	 	
+	 	<!-- 其他不指定的列会自动封装，但推荐我们只要写 resultMap ，就把全部的映射规则都写上-->
+	 	<result column="gender" property="gender"/>
+	 	<result column="email" property="email"/>
+	 </resultMap>	
+	 
+	 <select id="getEmpById2" resultMap="MyEmp">
+	 	select id, last_name, gender, email  
+		from tbl_employee 
+		where id = #{id}
+	 </select>
+	 
+	 
+	 <!-- ===================================================================== -->
+	 <!-- 测试一对一关系映射
+	 	场景一： 查询Employee 的同时，查出员工对应的部门。  (一对一关系)
+	 	一个员工有与之对应的部门信息
+	 	public Employee getEmpAndDeptById(Integer id);
+	  -->
+	  
+	 <!-- 方法一：联合查询，级联属性封装结果集 -->
+	 <resultMap type="emp2" id="MyDiffEmp">
+	 	<id column="id" property="id"/>
+	 	<result column="last_name" property="lastName"/>
+	 	<result column="gender" property="gender"/>
+	 	<result column="email" property="email"/>
+	 	
+	 	<result column="did" property="dept.id"/>
+	 	<result column="dept_name" property="dept.departmentName"/>
+	 </resultMap>
+	 
+	 <!-- 方式二： association定义单个对象的封装规则-->
+	 <!-- 
+	 	association 标签：可以指定联合的 javaBean对象
+	 	property 属性：	指定哪个属性是联合的对象
+	 	javaType 属性：	指定这个属性对象的类型【不能省略】
+	  -->
+	 <resultMap type="emp2" id="MyDiffEmp2">
+	 	<id column="id" property="id"/>
+	 	<result column="last_name" property="lastName"/>
+	 	<result column="gender" property="gender"/>
+	 	<result column="email" property="email"/>
+	 	
+	 	<association property="dept" javaType="com.iceron.mybatis.bean.Department">
+	 		<id column="did" property="id"/>
+	 		<result column="dept_name" property="departmentName"/>
+	 	</association>
+	 </resultMap>
+	 
+	 <!-- 此处不该使用resultType， 因为dept属性不会被封装入值 -->
+	 <select id="getEmpAndDeptById" resultMap="MyDiffEmp2">
+	 	select emp.id id , emp.last_name last_name, emp.gender gender, emp.email email, emp.d_id d_id, dept.id did, dept.dept_name dept_name
+	 	from tbl_employee emp, tbl_dept dept
+	 	where emp.d_id = dept.id
+	 	and emp.id = #{id}
+	 </select>
+	 
+	 
+	 <!-- 使用 association 分布查询  (一对一关系)
+	 	1. 先按照员工id查询员工信息
+	 	2. 根据查出员工信息中的d_id值去部门表查出部门信息
+	 	3. 把查出的部门设置到员工信息中。
+	 public Employee getEmpByIdStep(Integer id);
+	 public Department getDeptById(Integer id);
+	 -->
+	 <resultMap type="emp2" id="MyEmpByStep">
+	 	<id column="id" property="id"/>
+	 	<result column="last_name" property="lastName"/>
+	 	<result column="gender" property="gender"/>
+	 	<result column="email" property="email"/>
+	 	<!-- association 定义关联对象的封装规则 
+	 		select属性： 表名当前属性是调用select 指定的方法查出的结果
+	 		column属性： 指定将哪一列的值传给这个方法
+	 	-->
+	 	<association property="dept" select="com.iceron.mybatis.dao.EmployeeMapper.getDeptById" column="d_id">   <!--com.iceron.mybatis.dao.EmployeeMapper 可以省略不写-->
+	 	</association>
+	 </resultMap>
+	 <select id="getEmpByIdStep" resultMap="MyEmpByStep">
+	 	select id, last_name, gender, email, d_id
+	 	from tbl_employee
+	 	where id = #{id}
+	 </select>
+	 <select id="getDeptById" resultType="com.iceron.mybatis.bean.Department">
+	 	select id, dept_name departmentName
+	 	from tbl_dept
+	 	where id = #{id}
+	 </select>
+	 
+	 
+	 <!-- 可以使用延迟加载
+	 	我们每次查询Employee 对象的时候，都将Departmen起查询了出来
+	 	我们希望 部门信息在我们需要的时候，再去查询。分布查询的基础上加上两个配置即可完成 ：
+	 	1. 在全局变量中 设置 <setting name="lazyLoadingEnabled" value="true"/>  
+	 	2. 在全局变量中 设置<setting name="aggressiveLazyLoading" value="false"/>
+	  -->
+	  
+	  
+	   <!-- ===================================================================== -->
+	  <!-- 测试一对多关系映射
+	 	场景二： 查询部门的同时，将部门对应的所有的员工信息也查询出来。  (一对多关系)
+	 	public Department getDeptById2(Integer id);
+	  -->
+	  <!-- 
+	 	collection 标签：	定义关联集合类型的属性的封装规则
+	 	property 属性：	指定哪个属性是要关联
+	 	ofType 属性：		指定集合里面元素的类型(全类名或别名, 此处使用了别名) 
+	  -->
+	  <resultMap type="com.iceron.mybatis.bean.Department" id="MyDept">
+	  	<id column="did" property="id"/>
+	  	<result column="dept_name" property="departmentName"/>
+	  
+	  	<collection property="emps" ofType="emp2"> 
+	  		<!-- 定义集合中元素的封装规则 -->
+	  		<id column="eid" property="id"/>
+	  		<result column="last_name" property="lastName"/>
+	  		<result column="gender" property="gender"/>
+	  		<result column="email" property="email"/>
+	  	</collection>
+	  </resultMap>
+	  
+	  <select id="getDeptById2" resultMap="MyDept">
+	  	 select 
+	  	 	dept.id did, 
+  	 		dept.dept_name dept_name, 
+  	 		emp.id eid, 
+  	 		emp.last_name last_name, 
+  	 		emp.gender gender, 
+  	 		emp.email email
+	  	 from tbl_dept dept
+	  	 left join tbl_employee emp
+	  	 on dept.id = emp.d_id
+	  	 where dept.id = #{id}
+	  </select>
+	  
+	  
+	  <!-- 使用 collection 分布查询  (一对多关系)
+	 public Department getDeptByIdStep(Integer id);
+	 public List<Employee> getEmpsByDeptId(Integer deptId);
+	 -->
+	 <resultMap type="com.iceron.mybatis.bean.Department" id="MyDeptStep">
+	 	<id column="id" property="id"/>
+	  	<result column="dept_name" property="departmentName"/>
+	  	
+	  	<!-- collection 定义关联集合类型的属性的封装规则
+	 		select属性： 表名当前属性是调用select 指定的方法查出的结果
+	 		column属性： 指定将哪一列的值传给这个方法        ☆☆☆☆☆☆   扩展 ：多列的值传递过去  ☆☆☆☆☆☆   
+	 		fetchType="lazy":开启延迟加载， 优先级大于 lazyLoadingEnabled
+	 					- lazy： 延迟
+	 					- eager：立即
+	 		☆☆☆☆☆☆   扩展 ：多列的值传递过去  ☆☆☆☆☆☆   
+	 		将多列的值封装map 传递：column="{key1=column1, key2=column2, }"
+	 	-->
+	  	<collection property="emps" select="com.iceron.mybatis.dao.EmployeeMapper.getEmpsByDeptId" 
+	  				column="{deptId=id}" fetchType="lazy">   <!--com.iceron.mybatis.dao.EmployeeMapper 可以省略不写-->
+	  	</collection>
+	 </resultMap>
+	 <select id="getDeptByIdStep" resultMap="MyDeptStep">
+	 	select id, dept_name
+	 	from tbl_dept
+	 	where id = #{id}
+	 </select>
+	 <select id="getEmpsByDeptId" resultType="emp2">
+	 	select id, last_name, gender, email, d_id
+	 	from tbl_employee
+	 	where d_id = #{deptId}
+	 </select>
+	 
+	 
+	 <!-- ===================================================================== -->
+	 <!-- 
+	 	<discriminator javaType=""></discriminator>   :resultMap 标签的子标签
+		鉴别器：mybatis 可以使用discriminator 判断某列的值，然后根据某列的值改变封装行为
+		封装Employee为例：
+			场景：如果查出的是女生：就把部门信息查询出来，否则不查询;
+				如果是男生，把last_name这一列的值赋值给email;
+	  -->
+	  <resultMap type="emp2" id="MyEmpByDis">
+	 	<id column="id" property="id"/>
+	 	<result column="last_name" property="lastName"/>
+	 	<result column="gender" property="gender"/>
+	 	<result column="email" property="email"/>
+	 	
+	 	<!-- 
+	 		column 属性： 	     指定要判断的列名
+	 		javaType 属性：  列植对应的Java类型
+	 	 -->
+	 	<discriminator javaType="string" column="gender">
+	 	    <!-- 女生   resultType：指定封装的结果类型 (不能缺少，resultType resultMap 二选一)-->
+	 		<case value="0" resultType="emp2">
+	 			<association property="dept" select="com.iceron.mybatis.dao.EmployeeMapper.getDeptById" 
+	 				 		 column="d_id">   <!--com.iceron.mybatis.dao.EmployeeMapper 可以省略不写-->
+	 			</association>
+	 		</case>
+	 		
+	 		<!-- 男生   resultType：指定封装的结果类型-->
+	 		<case value="1" resultType="emp2">
+	 			<result column="last_name" property="lastName"/>
+			 	<result column="gender" property="gender"/>
+			 	<result column="last_name" property="email"/>
+	 		</case>
+	 	</discriminator>
+	 </resultMap>
+	 
+	 <!-- public Employee getEmpByIdStep02(Integer id); -->
+	 <select id="getEmpByIdStep02" resultMap="MyEmpByDis">
+	 	select id, last_name, gender, email, d_id
+	 	from tbl_employee
+	 	where id = #{id}
+	 </select>
+</mapper>
+
+
+
+
+

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+ "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+<!-- 
+	namespace:名称空间;指定为接口的全类名 ,使 dao接口和 sql映射文件动态绑定
+-->
+<mapper namespace="com.iceron.mybatis.dao.EmployeeMapper">
+
+
+	<!-- 
+		id：			唯一标识 = getEmpById，使 dao接口的方法和 sql映射文件的sql 语句一一绑定
+		resultType： 返回值类型 (查询的结果以什么类型封装 并返回)
+		#{id}：		从传递过来的参数中取出id值
+	 -->
+	 <!-- 
+	 	1. public Employee getEmpById(Integer id); 
+	 	2. select id, last_name as lastName, gender, email     ps:此处的lastName 和bean的字段相同，在没有设置mapUnderscoreToCamelCase之前
+	 	3. 因为在 mybatis-config.xml 文件中 设置了mapUnderscoreToCamelCase，所以无需再给字段起别名
+	 	4. 因为在 mybatis-config.xml 文件中 设置了typeAliases，所以resultType="com.iceron.mybatis.bean.Employee" 改为 resultType="emp"
+	 	5. 因为在 mybatis-config.xml 文件中 设置了批量起别名，所以resultType="employee"  (默认别名)
+	 	6. 测试@Alias ，resultType="emp2"
+	 	7. databaseId ： 标识该条sql 是在哪个数据库环境下使用  
+		 	MyBatis 可以根据不同的数据库厂商执行不同的语句，这种多厂商的支持是基于映射语句中的 databaseId 属性。 
+		 	MyBatis 会加载不带 databaseId 属性和 带有匹配当前数据库 databaseId 属性的所有语句。 
+		 	如果同时找到带有 databaseId 和不带 databaseId 的相同语句，则后者会被舍弃。
+	 -->
+	<select id="getEmpById" resultType="emp2">  
+		select id, last_name, gender, email
+		from tbl_employee 
+		where id = #{id}
+	</select>
+	
+	<select id="getEmpById" resultType="emp2" databaseId="mysql">  
+		select id, last_name, gender, email
+		from tbl_employee 
+		where id = #{id}
+	</select>
+	
+	<select id="getEmpById" resultType="emp2" databaseId="oracle">  
+		select emp_id id, last_name, gender, email
+		from employees
+		where emp_id = #{id}   <!-- oracle 查询时，不能直接引用别名去查询，所以使用 emp_id-->
+	</select>
+	
+	
+	
+	
+</mapper>

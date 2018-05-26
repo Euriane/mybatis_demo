@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+ PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+ "http://mybatis.org/dtd/mybatis-3-config.dtd">
+ 
+<!-- 
+	元素类型为 "configuration" 的内容必须匹配 ：
+	(注意顺序：)
+	properties?,
+	settings?,
+	typeAliases?,
+	typeHandlers?,
+	objectFactory?,
+	objectWrapperFactory?,
+	reflectorFactory?,
+	plugins?,
+	environments?,
+	databaseIdProvider?,
+	mappers?
+ -->
+<configuration>
+	<!-- 
+		1. propertise 标签          引入外部配置文件（数据库信息）
+		resource：引入类路径下的资源
+		url：引入网络路径或者磁盘路径下的资源
+		
+		ps: 实际开发中，mybatis与spring整合的时候，无需这样做，因为这块交给了spring来管理, 该标签不太使用
+	 -->
+	<properties resource="dbconfig.properties"></properties>
+	 
+	 
+	<!-- ============================================================================== --> 
+	 <!-- 
+		2、setting 标签              运行时行为设置  （非常重要）
+		setting: 用来设置每一个设置项
+			name:设置项名
+			value:设置项值
+	 -->
+	<settings>
+		<!-- 显示地指定每个我们需要更改的配置的值，即使是默认的值。防止版本更新带来的问题 -->
+		<setting name="mapUnderscoreToCamelCase" value="true"/>		<!-- 开启自动驼峰命名规则（camel case）映射，即从经典数据库列名 A_COLUMN 到经典 Java 属性名 aColumn 的类似映射。 -->
+		<setting name="lazyLoadingEnabled" value="true"/>  			<!-- 延迟加载的全局开关。当开启时，所有关联对象都会延迟加载。 -->
+		<setting name="aggressiveLazyLoading" value="false"/> 		<!-- 当开启时，任何方法的调用都会加载该对象的所有属性。否则，每个属性会按需加载 -->
+	</settings>
+	
+	
+	<!-- ============================================================================== --> 
+	<!-- 
+		3、typeAliases 标签               别名处理器 (别名不区别大小写)
+		typeAlias：为某个Java类型起别名
+			type：指定要起别名的类型全类名； 默认别名就是类名小写 employee
+			alias：指定新的别名， 我们起得别名不能和 常见的 Java 类型内建的相应的类型别名重复。
+			
+		虽然可以使用别名，但还是推荐不适用别名，sql 映射文件直接使用全类名。
+	 -->
+	<typeAliases>
+		<!-- 
+			单独为某个类起别名
+			<typeAlias type="com.iceron.mybatis.bean.Employee" alias="emp"/> 
+		-->
+		
+		<!-- 
+			批量起别名 : 
+			package：为某个包下的所有类批量起别名
+			name: 指定包名（为当前包以及下面所有的后代包的每一个类都起一个默认别名，默认别名都是类名小写 ）
+			ps:如果指定包以及后代包有多个相同的类，则必须用 @Alias 注解 为每个类起新的别名
+		 -->
+		 <package name="com.iceron.mybatis.bean"/>
+	</typeAliases>
+	
+	
+	<!-- ============================================================================== --> 
+	<!-- 
+		4、typeHandlers 标签                         类型处理器
+		Javabean数据类型 和 数据库数据类型 映射
+		
+		<typeHandlers>
+	 		<typeHandler handler=""/>
+	 	</typeHandlers>
+	 -->
+	 
+	 
+	 
+	<!-- ============================================================================== --> 
+	<!-- 
+		5、plugins标签                               插件
+		
+		<plugins>
+			<plugin interceptor=""></plugin>
+		</plugins>
+	 -->
+	
+	
+	
+	<!-- ============================================================================== --> 
+	<!-- 
+		6、environments标签                  环境
+			environments 标签 : 	环境 。例如，开发、测试和生产环境需要有不同的配置；或者共享相同 Schema 的多个生产数据库
+			default 属性: 		指定使用某种环境
+			
+				environment 标签: 	配置一个具体的环境信息, 必须配置 transactionManager标签和dataSource标签
+				id 属性: 				代表当前环境的唯一标识
+				
+					transactionManager 标签：	务管理器
+					type 属性：				事务管理器的类型     type=JDBC 或MANAGED 或自定义事务管理器
+					
+					dataSource 标签：	数据源
+					type 属性： 		type=UNPOOLED  或POOLED  或JNDI 或自定义数据源
+					
+		如果你正在使用 Spring + MyBatis，则没有必要配置事务管理器和数据源， 因为 Spring 模块会使用自带的管理器来覆盖前面的配置。
+	 -->
+	<environments default="dev_mysql">
+		<!-- 配置测试环境   Oracle数据库-->
+		<environment id="test_oracle">
+			<transactionManager type="JDBC"/>
+			<dataSource type="POOLED">
+				<!-- propertise 标签          引入外部配置文件（数据库信息） -->
+				<!-- ps: 实际开发中，mybatis与spring整合的时候，无需这样做，因为这块交给了spring来管理 -->
+				<property name="driver" value="${orcl.driver}" />
+				<property name="url" value="${orcl.url}" />
+				<property name="username" value="${orcl.username}" />
+				<property name="password" value="${orcl.password}" /> 
+			</dataSource>
+		</environment>
+		
+		<!-- 配置开发环境  MySQL-->
+		<environment id="dev_mysql">
+			<transactionManager type="JDBC" />
+			<dataSource type="POOLED">
+				<!-- 
+				<property name="driver" value="com.mysql.jdbc.Driver" />
+				<property name="url" value="jdbc:mysql://localhost:3306/mybatis" />
+				<property name="username" value="root" />
+				<property name="password" value="910805" /> 
+				-->
+				
+				<!-- propertise 标签          引入外部配置文件（数据库信息） -->
+				<!-- ps: 实际开发中，mybatis与spring整合的时候，无需这样做，因为这块交给了spring来管理 -->
+				<property name="driver" value="${jdbc.driver}" />
+				<property name="url" value="${jdbc.url}" />
+				<property name="username" value="${jdbc.username}" />
+				<property name="password" value="${jdbc.password}" /> 
+			</dataSource>
+		</environment>
+	</environments>
+	
+	
+	<!-- ============================================================================== --> 
+	<!-- 
+		7、databaseIdProvider标签          多数据库支持
+		
+		type="DB_VENDOR"：VenderDatabaseIdProvider 
+			作用就是得到数据库厂商的标识(驱动 getDatabaseProductName() 得到厂商标识)，mybatis就能根据数据库厂商标识来执行不同的sql
+	 -->
+	<databaseIdProvider type="DB_VENDOR">
+	  <!-- 为不同的数据库厂商起别名 -->
+	  <property name="MySQL" value="mysql"/>
+	  <property name="SQL Server" value="sqlserver"/>
+	  <property name="DB2" value="db2"/>        
+	  <property name="Oracle" value="oracle" />
+	</databaseIdProvider>
+	 
+	 
+	<!-- ============================================================================== --> 
+	<!-- 
+		8、Mappers标签                          注册 sql 映射文件（非常重要）
+		
+		mappers 标签： 将sql映射文件注册到全局配置中
+			mapper 标签： 		注册一个sql映射文件
+			resource 属性：	引用相对于类路径的资源
+			url 属性： 		引用网络路径或磁盘路径下的sql映射文件
+			class属性：		引用（注册）接口
+								1. 有sql映射文件，sql映射文件名必须和接口同名，并且放在与接口同一目录下。
+								2. 没有sql 映射文件，所有的sql 都是利用注解写在接口上
+								推荐：比较重要或复杂的Dao 接口  我们来写sql 映射文件
+								           不重要的或简单的Dao 接口，为了开发快速，我们可以使用注解的方式
+		package 标签： 批量注册
+		name 属性： 	包名
+			1. 有sql映射文件，sql映射文件名必须和接口同名，并且放在与接口同一目录下。
+			2. 在conf 文件夹下新建com.iceron.mybatis.dao 包，把sql 映射文件放入该包内。实际上，接口 和 sql 映射文件仍旧在 MyBatis_02\bin\com\iceron\mybatis\dao 内
+	 -->
+	<!-- 将我们写好的sql映射文件（EmployeeMapper.xml）一定要注册到全局配置文件（mybatis-config.xml）中 -->
+	<mappers>
+		<!-- 
+		<mapper resource="com/icerno/mybatis/dao/EmployeeMapper.xml" />
+		<mapper class="com.iceron.mybatis.dao.EmployeeMapperAnnotation" /> 
+		-->
+		
+		<package name="com.iceron.mybatis.dao"/>
+	</mappers>
+	
+	
+</configuration>

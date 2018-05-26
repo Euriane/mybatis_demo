@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+ PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+ "http://mybatis.org/dtd/mybatis-3-config.dtd">
+ 
+<!-- 
+	元素类型为 "configuration" 的内容必须匹配 ：
+	(注意顺序：)
+	properties?,
+	settings?,
+	typeAliases?,
+	typeHandlers?,
+	objectFactory?,
+	objectWrapperFactory?,
+	reflectorFactory?,
+	plugins?,
+	environments?,
+	databaseIdProvider?,
+	mappers?
+ -->
+<configuration>	 
+	<!-- ============================================================================== --> 
+	 <!-- 
+		2、setting 标签              运行时行为设置  （非常重要）
+		setting: 用来设置每一个设置项
+			name:设置项名
+			value:设置项值
+	 -->
+	<settings>
+		<!-- 显示地指定每个我们需要更改的配置的值，即使是默认的值。防止版本更新带来的问题 -->
+		<setting name="mapUnderscoreToCamelCase" value="true"/>		<!-- 开启自动驼峰命名规则（camel case）映射，即从经典数据库列名 A_COLUMN 到经典 Java 属性名 aColumn 的类似映射。 -->
+		<setting name="lazyLoadingEnabled" value="true"/>  			<!-- 延迟加载的全局开关。当开启时，所有关联对象都会延迟加载。 -->
+		<setting name="aggressiveLazyLoading" value="false"/> 		<!-- 当开启时，任何方法的调用都会加载该对象的所有属性。否则，每个属性会按需加载 -->
+		<setting name="cacheEnabled" value="true"/>   				<!-- 开启二级缓存机制-->
+	</settings>
+	
+	
+	<!-- ============================================================================== --> 
+	<!-- 
+		7、databaseIdProvider标签          多数据库支持
+		
+		type="DB_VENDOR"：VenderDatabaseIdProvider 
+			作用就是得到数据库厂商的标识(驱动 getDatabaseProductName() 得到厂商标识)，mybatis就能根据数据库厂商标识来执行不同的sql
+		name 属性： 固定写法
+		value 属性：数据库厂商标识的别名
+	 -->
+	<databaseIdProvider type="DB_VENDOR">
+	  <!-- 为不同的数据库厂商起别名 -->
+	  <property name="MySQL" value="mysql"/>
+	  <property name="SQL Server" value="sqlserver"/>
+	  <property name="DB2" value="db2"/>        
+	  <property name="Oracle" value="oracle" />
+	</databaseIdProvider>
+	
+</configuration>

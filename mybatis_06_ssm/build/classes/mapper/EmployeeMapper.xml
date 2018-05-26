@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+ "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+<!-- 
+	namespace:名称空间;指定为接口的全类名 ,使 dao接口和 sql映射文件动态绑定
+-->
+<mapper namespace="com.iceron.mybatis.dao.EmployeeMapper">
+	<!-- public List<Employee> getEmps(); -->
+	<select id="getEmps" resultType="com.iceron.mybatis.bean.Employee">
+		select id, last_name, gender, email, d_id
+		from tbl_employee
+	</select>
+	
+	
+	<!-- public Employee getEmpById(Integer id); -->
+	<select id="getEmpById" resultType="com.iceron.mybatis.bean.Employee">  
+		select id, last_name, gender, email, d_id
+		from tbl_employee 
+		where id = #{id}
+	</select>
+	
+	
+</mapper>
+
+
+
+
+

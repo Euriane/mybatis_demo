@@ -1,0 +1,74 @@
+MyBatis默认定义了两级缓存
+	1. 一级缓存(本地缓存): sqlSession级别的缓存(map)。
+		与数据库同一次会话期间查询到的数据会放在本地缓存中，以后如果需要获取相同的数据，直接从缓存中拿，没必要再去查询数据库
+		
+		一级缓存失效情况: (没有使用到当前一级缓存的情况，效果就是，还需要再向数据库发出查询。)
+			1. sqlSession 不同，则一级缓存会失效。
+			2. sqlSession 相同，但是查询条件不同，则一级缓存失效。(因为当前一级缓存还没有这个数据)
+			3. sqlSession 相同， 两次相同的查询之间执行了增删改操作，则一级缓存失效。(这次增删改操作可能对当前数据有影响)
+			4. sqlSession 相同，但是手动清除了一级缓存(sqlSession.clearCache() 缓存清空)，则一级缓存失效。
+			
+			
+	2， 二级缓存(全局缓存): 基于namespace级别的缓存，一个namespace 对应一个二级缓存
+		工作机制：
+			1>. 一个会话，查询一条数据，这个数据就会被放在当前会话的一级缓存中
+			2>. 如果该会话关闭，这个会话对应的一级缓存也会失效，但是一级缓存中的数据会被mybatis 保存到二级缓存中。新的会话查询信息，就可以参照二级缓存的内容。(ps : 只有一级缓存失效了，二级缓存中才会有这个数据。)
+			3>. 不同的namespace查出的数据会放在自己对应的缓存中(map)
+			ps： 查出的数据都会被默认先放在一级缓存中。只有会话提交或者关闭后，一级缓存失效，一级缓存中的数据才会转移到二级缓存中。
+			
+		使用：
+			1>. 开启全局二级缓存机制 ：         <setting name="cacheEnabled" value="true"/>   		<!-- 开启二级缓存机制--> 
+			2>. 去每个sql 映射文件中配置使用二级缓存  :  <cache></cache>
+			
+				<cache eviction="FIFO" flushInterval="60000" readOnly="false" size="1024"></cache>
+				eviction:缓存的回收策略： 默认 LRU。
+					• LRU – 最近最少使用的：移除最长时间不被使用的对象。
+					• FIFO – 先进先出：按对象进入缓存的顺序来移除它们。
+					• SOFT – 软引用：移除基于垃圾回收器状态和软引用规则的对象。
+					• WEAK – 弱引用：更积极地移除基于垃圾收集器状态和弱引用规则的对象。
+				flushInterval：缓存刷新间隔 ：默认不清空
+					缓存多长时间清空一次，默认不清空，设置一个毫秒值
+				readOnly:是否只读：默认false
+					true：只读；mybatis认为所有从缓存中获取数据的操作都是只读操作，不会修改数据。
+							 mybatis为了加快获取速度，直接就会将数据在缓存中的引用交给用户。不安全，速度快
+					false：非只读：mybatis觉得获取的数据可能会被修改。
+							mybatis会利用序列化&反序列的技术克隆一份新的数据给你。安全，速度慢
+				size：缓存存放多少元素；
+				type=""：指定自定义缓存的全类名；
+						实现Cache接口即可；
+			3>. 因为缓存期间，mybatis可能会使用序列化&反序列的技术， 所以，我们的pojo需要实现序列化接口
+			
+			
+	 3. 和缓存有关的设置/属性
+	 	1>. <setting name="cacheEnabled" value="true|false"/> ， 默认为true
+	 		如果设置为false, 二级缓存关闭，一级缓存没有关闭
+	 	2>. 每个sql 标签都有  useCache属性 (<select id="getEmpById" resultType="emp2" useCache="true">) ， 默认为true
+	 		如果设置为false, 二级缓存关闭，一级缓存没有关闭
+	 	3>. 每个增删改标签的 flushCache 属性 (<select id="getEmpById" resultType="emp2" flushCache="true">)， 默认为true
+	 		查询标签的 flushCache 属性，默认为false
+	 		每次增删改执行完成后，就会清除缓存，(一级缓存、二级缓存都会被清除)
+	 			此时若开启了二级缓存，一级缓存中的数据会被mybatis 保存到二级缓存中。新的会话查询信息，就可以参照二级缓存的内容。
+	 		查询执行完成后，不会清除缓存
+		4>. sqlSession.clearCache() 缓存清空； 只是清除当前sqlSession的一级缓存，和二级缓存没关系的。		
+		5>. <setting name="localCacheScope" value="SESSION|STATEMENT"/>  本地缓存作用域， 默认值为 SESSION
+			SESSION ： 	这种情况下会缓存一个会话中执行的所有查询
+			STATEMENT：	本地会话仅用在语句执行上，对相同 SqlSession 的不同调用将不会共享数据。(该值可以禁用一级缓存)
+			
+			
+	 4. MyBatis缓存原理：如图
+	
+	 5. 使用ehcache
+	 	1>. 导入ehcache-core-2.6.8.jar、mybatis-ehcache-1.0.3.jar、slf4j-api-1.6.1.jar、slf4j-log4j12-1.6.2.jar  ---> add buildpath
+	 	2>. 在所有的sql 映射文件添加  <cache type="org.mybatis.caches.ehcache.EhcacheCache"/>  (ps: 设置之后，mybatatis 就不会使用自带的缓存，而是使用ehcache)
+	 		或者 <cache-ref namespace="com.iceron.mybatis.dao.EmployeeMapper"/>   <!-- 引用缓存： namespace: 指定和哪个namespace下的缓存一样 -->
+	 	3>. 在类路径下添加 ehcache.xml
+						
+	 6. 第三方缓存整合
+	 	1>. 导入第三方缓存包即可
+	 	2>. 导入与第三方缓存整合的适配包、日志包
+	 	3>. 编写缓存的配置文件
+	 	4>. 在sql映射文件中使用自定义缓存			
+						
+						
+						
+						

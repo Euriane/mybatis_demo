@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+ "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+ 
+<!-- 
+	namespace:名称空间;指定为接口的全类名 ,使 dao接口和 sql映射文件动态绑定
+-->
+<mapper namespace="com.iceron.mybatis.dao.EmployeeMapperBatchOperation">
+	  <!-- ===================================================================== -->
+	  <!-- mysql下批量保存      foreach  (ps: 该方法批量操作的话，数据库不能接受太多的参数, 所以一般不推荐该方式)
+	  public Long addEmps(@Param("emps")List<Employee> emps);
+	  MySQL下批量保存： 可以foreach 遍历   values(),(),()...
+	   -->
+	   <!-- 方式一： 推荐使用-->
+	   <insert id="addEmps">
+	   	  	insert into tbl_employee(last_name, gender, email, d_id) 
+	 		values 
+	 		<foreach collection="emps" item="emp" separator="," index="i">
+	 			(#{emp.lastName}, #{emp.gender}, #{emp.email}, #{emp.dept.id})
+	 		</foreach>
+	   </insert>
+	   
+	   <!-- 方式二： 这种方式需要数据库连接属性设置：   jdbc.url=jdbc:mysql://localhost:3306/mybatis?allowMultiQueries=true
+	   		这种分号分割多个sql 可以用于其他的批量操作，如批量修改，批量删除。
+	   	-->
+	   <insert id="addEmps2">
+	   	  <foreach collection="emps" item="emp" separator=";" index="i">
+	   	  	insert into tbl_employee(last_name, gender, email, d_id) 
+	 		values (#{emp.lastName}, #{emp.gender}, #{emp.email}, #{emp.dept.id})
+	 	  </foreach>
+	   </insert>
+	   
+	  
+	   <!-- ===================================================================== -->
+	   <!-- //测试Batch Operation
+		public Long addEmps02(Employee employee); -->
+	   <insert id="addEmps02">
+	   	    insert into tbl_employee(last_name, gender, email) 
+	 		values (#{lastName}, #{gender}, #{email})
+	   </insert>
+</mapper>
+
+
+
+
+
+
+
+
+

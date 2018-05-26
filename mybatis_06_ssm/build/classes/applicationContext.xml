@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring"
+	xsi:schemaLocation="http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring-1.2.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd">
+		
+	<!-- Spring 用来控制业务逻辑、数据源、事务控制、aop功能 -->
+	<!-- 不扫描控制器 (springmvc负责扫描控制器)-->
+	<context:component-scan base-package="com.iceron.mybatis">
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller" />
+	</context:component-scan>
+	
+	
+	<!-- ====================================================================================== -->
+	<!-- 引入数据库的配置文件 -->
+	<context:property-placeholder location="classpath:dbconfig.properties"/>
+	
+	
+	<!-- 配置c3po 数据源  (导入：c3po包)-->
+	<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+		<!-- 使用外部属性文件的属性 -->
+		<property name="jdbcUrl" value="${jdbc.url}"></property>
+		<property name="driverClass" value="${jdbc.driver}"></property>
+		<property name="user" value="${jdbc.username}"></property>
+		<property name="password" value="${jdbc.password}"></property>
+	</bean>
+	
+	
+	<!-- spring 事务管理 -->
+	<bean id="dataSourceTransactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+	
+	
+	<!-- 启用基于注解的事务  (加入tx命名空间) -->
+	<tx:annotation-driven transaction-manager="dataSourceTransactionManager"/>
+		
+	
+	<!-- ====================================================================================== -->	
+	<!-- 整合mybatis, 配置好该部分后，就不需要mybatis-config.xml文件了，但是建议留下-->
+	<!-- 
+		目的：1. spring 管理所有的组件。mapper实现类 ，也就是sql映射文件
+			2. spring 管理事务，spring 声明式事务
+	 -->
+	 <!-- 创建 SqlSessionFactory对象-->
+	 <bean id="sqlSessionFactoryBean" class="org.mybatis.spring.SqlSessionFactoryBean">
+	 	<property name="dataSource" ref="dataSource"></property>
+	 	
+	 	<!-- configLocation:指定mybatis-config.xml文件的位置 -->
+	 	<property name="configLocation" value="classpath:mybatis-config.xml"></property>
+	 	
+	 	<!-- mapperLocations:指定sql 映射文件的位置 -->
+	 	<property name="mapperLocations" value="classpath:mapper/*.xml"></property>
+	 </bean>
+	 
+	 
+	 <!-- 配置一个可以进行批量执行的sqlSession -->
+	 <bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+	 	<constructor-arg name="sqlSessionFactory" ref="sqlSessionFactoryBean"></constructor-arg>
+	 	
+	 	<!-- 相当于全局配置批量操作 -->
+	 	<constructor-arg name="executorType" value="BATCH"></constructor-arg>
+	 </bean>
+	 
+	 
+	 <!-- ====================================================================================== -->	
+	 <!-- 因为mapper接口没有使用注解，所以需要扫描所有的mapper接口 ,让这些mapper能够自动注入 (加入mybatis-spring命名空间)-->
+	 <!-- base-package: 指定mapper接口的包名-->
+	 <!-- 第一种方式：
+		 <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+			<property name="basePackage" value="com.icerno.mybatis.dao"></property>
+		</bean> 
+	-->
+	
+	 <!-- 第二种方式： -->
+	 <mybatis-spring:scan base-package="com.iceron.mybatis.dao"/>
+	 
+	 
+	 <!-- ====================================================================================== -->
+</beans>
